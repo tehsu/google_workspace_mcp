@@ -127,7 +127,7 @@ async def read_sheet_values(
     user_google_email: str,
     spreadsheet_id: str,
     range_name: str = "A1:Z1000",
-    response_format: str = "text",
+    response_format: str = "json",
 ) -> str:
     """
     Reads values from a specific range in a Google Sheet.
@@ -136,7 +136,7 @@ async def read_sheet_values(
         user_google_email (str): The user's Google email address. Required.
         spreadsheet_id (str): The ID of the spreadsheet. Required.
         range_name (str): The range to read (e.g., "Sheet1!A1:D10", "A1:D10"). Defaults to "A1:Z1000".
-        response_format (str): Format of the response - "text" for formatted text or "json" for JSON data. Defaults to "text".
+        response_format (str): Format of the response - "text" for formatted text or "json" for JSON data. Defaults to "json".
 
     Returns:
         str: The values from the specified range in the requested format.
