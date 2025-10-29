@@ -165,20 +165,33 @@ async def read_sheet_values(
     if max_display_rows is not None and max_display_rows.strip():
         try:
             max_display_rows = int(max_display_rows)
+            # Validate that the value is non-negative
+            if max_display_rows < 0:
+                logger.warning(f"Invalid SHEETS_MAX_DISPLAY_ROWS value: {max_display_rows}. Must be non-negative. Falling back to displaying all rows.")
+                max_display_rows = None
         except ValueError:
             # If invalid value, fall back to displaying all rows
+            logger.warning(f"Invalid SHEETS_MAX_DISPLAY_ROWS value: '{max_display_rows}'. Must be a valid integer. Falling back to displaying all rows.")
             max_display_rows = None
     else:
         max_display_rows = None
 
-    if max_display_rows is not None and len(values) > max_display_rows:
+    # Handle display logic with explicit zero handling
+    if max_display_rows is not None and max_display_rows > 0 and len(values) > max_display_rows:
         displayed_rows = formatted_rows[:max_display_rows]
         text_output = (
             f"Successfully read {len(values)} rows from range '{range_name}' in spreadsheet {spreadsheet_id} for {user_google_email}:\n"
             + "\n".join(displayed_rows)
             + f"\n... and {len(values) - max_display_rows} more rows"
         )
+    elif max_display_rows == 0:
+        # Special case: when max_display_rows is 0, display no rows but show count
+        text_output = (
+            f"Successfully read {len(values)} rows from range '{range_name}' in spreadsheet {spreadsheet_id} for {user_google_email}:\n"
+            f"[{len(values)} rows read but display limited to 0 by SHEETS_MAX_DISPLAY_ROWS setting]"
+        )
     else:
+        # Display all rows (max_display_rows is None or values <= max_display_rows)
         text_output = (
             f"Successfully read {len(values)} rows from range '{range_name}' in spreadsheet {spreadsheet_id} for {user_google_email}:\n"
             + "\n".join(formatted_rows)
