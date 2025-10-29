@@ -173,7 +173,7 @@ async def read_sheet_values(
     if response_format == "json":
         # Calculate dimensions
         row_count = len(values)
-        column_count = max(len(row) for row in values) if values else 0
+        column_count = max(len(row) for row in values)
         
         # Normalize all rows to have the same number of columns by padding with empty strings
         normalized_values = []
