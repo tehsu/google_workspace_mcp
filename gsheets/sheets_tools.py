@@ -7,6 +7,7 @@ This module provides MCP tools for interacting with Google Sheets API.
 import logging
 import asyncio
 import json
+import os
 from typing import List, Optional, Union
 
 
@@ -158,11 +159,30 @@ async def read_sheet_values(
         padded_row = row + [""] * max(0, len(values[0]) - len(row)) if values else row
         formatted_rows.append(f"Row {i:2d}: {padded_row}")
 
-    text_output = (
-        f"Successfully read {len(values)} rows from range '{range_name}' in spreadsheet {spreadsheet_id} for {user_google_email}:\n"
-        + "\n".join(formatted_rows[:50])  # Limit to first 50 rows for readability
-        + (f"\n... and {len(values) - 50} more rows" if len(values) > 50 else "")
-    )
+    # Get maximum rows to display from environment variable
+    # If not set or set to None/empty, display all rows
+    max_display_rows = os.getenv('SHEETS_MAX_DISPLAY_ROWS')
+    if max_display_rows is not None and max_display_rows.strip():
+        try:
+            max_display_rows = int(max_display_rows)
+        except ValueError:
+            # If invalid value, fall back to displaying all rows
+            max_display_rows = None
+    else:
+        max_display_rows = None
+
+    if max_display_rows is not None and len(values) > max_display_rows:
+        displayed_rows = formatted_rows[:max_display_rows]
+        text_output = (
+            f"Successfully read {len(values)} rows from range '{range_name}' in spreadsheet {spreadsheet_id} for {user_google_email}:\n"
+            + "\n".join(displayed_rows)
+            + f"\n... and {len(values) - max_display_rows} more rows"
+        )
+    else:
+        text_output = (
+            f"Successfully read {len(values)} rows from range '{range_name}' in spreadsheet {spreadsheet_id} for {user_google_email}:\n"
+            + "\n".join(formatted_rows)
+        )
 
     logger.info(f"Successfully read {len(values)} rows for {user_google_email}.")
     return text_output

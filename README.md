@@ -168,6 +168,7 @@ uv run main.py --tools gmail drive
 | `USER_GOOGLE_EMAIL` | Default email for single-user auth |
 | `GOOGLE_PSE_API_KEY` | API key for Custom Search |
 | `GOOGLE_PSE_ENGINE_ID` | Search Engine ID for Custom Search |
+| `SHEETS_MAX_DISPLAY_ROWS` | Maximum rows to display when reading sheet values (default: unlimited) |
 | `MCP_ENABLE_OAUTH21` | Set to `true` for OAuth 2.1 support |
 | `WORKSPACE_MCP_STATELESS_MODE` | Set to `true` for stateless operation (requires OAuth 2.1) |
 
