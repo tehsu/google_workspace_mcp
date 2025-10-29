@@ -127,6 +127,7 @@ async def read_sheet_values(
     user_google_email: str,
     spreadsheet_id: str,
     range_name: str = "A1:Z1000",
+    response_format: str = "text",
 ) -> str:
     """
     Reads values from a specific range in a Google Sheet.
@@ -135,11 +136,16 @@ async def read_sheet_values(
         user_google_email (str): The user's Google email address. Required.
         spreadsheet_id (str): The ID of the spreadsheet. Required.
         range_name (str): The range to read (e.g., "Sheet1!A1:D10", "A1:D10"). Defaults to "A1:Z1000".
+        response_format (str): Format of the response - "text" for formatted text or "json" for JSON data. Defaults to "text".
 
     Returns:
-        str: The formatted values from the specified range.
+        str: The values from the specified range in the requested format.
     """
-    logger.info(f"[read_sheet_values] Invoked. Email: '{user_google_email}', Spreadsheet: {spreadsheet_id}, Range: {range_name}")
+    logger.info(f"[read_sheet_values] Invoked. Email: '{user_google_email}', Spreadsheet: {spreadsheet_id}, Range: {range_name}, Format: {response_format}")
+
+    # Validate response format
+    if response_format not in ["text", "json"]:
+        raise ValueError(f"Invalid response_format '{response_format}'. Must be 'text' or 'json'.")
 
     result = await asyncio.to_thread(
         service.spreadsheets()
@@ -150,9 +156,45 @@ async def read_sheet_values(
 
     values = result.get("values", [])
     if not values:
-        return f"No data found in range '{range_name}' for {user_google_email}."
+        if response_format == "json":
+            return json.dumps({
+                "message": f"No data found in range '{range_name}' for {user_google_email}.",
+                "spreadsheet_id": spreadsheet_id,
+                "range": range_name,
+                "user_email": user_google_email,
+                "values": [],
+                "row_count": 0,
+                "column_count": 0
+            })
+        else:
+            return f"No data found in range '{range_name}' for {user_google_email}."
 
-    # Format the output as a readable table
+    # If JSON format is requested, return JSON response
+    if response_format == "json":
+        # Calculate dimensions
+        row_count = len(values)
+        column_count = max(len(row) for row in values) if values else 0
+        
+        # Normalize all rows to have the same number of columns by padding with empty strings
+        normalized_values = []
+        for row in values:
+            normalized_row = row + [""] * (column_count - len(row))
+            normalized_values.append(normalized_row)
+        
+        json_response = {
+            "message": f"Successfully read {row_count} rows from range '{range_name}' in spreadsheet {spreadsheet_id} for {user_google_email}.",
+            "spreadsheet_id": spreadsheet_id,
+            "range": range_name,
+            "user_email": user_google_email,
+            "values": normalized_values,
+            "row_count": row_count,
+            "column_count": column_count
+        }
+        
+        logger.info(f"Successfully read {len(values)} rows for {user_google_email} in JSON format.")
+        return json.dumps(json_response, ensure_ascii=False, indent=2)
+
+    # For text format, format the output as a readable table
     formatted_rows = []
     for i, row in enumerate(values, 1):
         # Pad row with empty strings to show structure
@@ -197,7 +239,7 @@ async def read_sheet_values(
             + "\n".join(formatted_rows)
         )
 
-    logger.info(f"Successfully read {len(values)} rows for {user_google_email}.")
+    logger.info(f"Successfully read {len(values)} rows for {user_google_email} in text format.")
     return text_output
 
 
